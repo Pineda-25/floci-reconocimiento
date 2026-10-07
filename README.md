@@ -1,0 +1,1 @@
+#Consumiento sevicios de de floci Rekognition
