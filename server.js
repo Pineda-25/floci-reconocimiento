@@ -150,6 +150,7 @@ app.post('/api/analizar-documento', uploadPdf.single('documento'), async (req, r
     //Enviar al cliente mock
     const command = new DetectDocumentTextCommand(params)
     const response = await textractClient.send(command)
+    console.log(JSON.stringify(response, null, 2))
 
     //enviar respuesta
     res.json({

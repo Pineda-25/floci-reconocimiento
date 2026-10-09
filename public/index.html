@@ -120,6 +120,10 @@
         })
         const data = await response.json()
 
+        // Mostrar en la consola del navegador (F12)
+        console.log("=== JSON RECIBIDO DE TEXTRACT ===")
+        console.log(data)
+
         if(data.success){
           listaTexto.innerHTML = ``
           data.blocks.forEach(block => {
