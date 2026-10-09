@@ -9,12 +9,27 @@ const {
   DetectLabelsCommand
 } = require("@aws-sdk/client-rekognition");
 
+const {
+  TextractClient,
+  DetectDocumentTextCommand
+} = require("@aws-sdk/client-textract")
+
 //Opcional (considerarse cuando se realice pruebas de con FLOCI)
 
 //Configuracion del mockp (dato de prueba personalizado)
-const {mockClient} = require("aws-sdk-client-mock")
+const {mockClient} = require("aws-sdk-client-mock");
 const rekognitionMock = mockClient(RekognitionClient)
+//configuracion del mock de textract
+const textractMock = mockClient(TextractClient)
 
+
+//DEFINIR LAS RESPUESTA PERSONALIZADA
+textractMock.on(DetectDocumentTextCommand).resolves({
+  Blocks: [
+    { BlockType: "LINE", Text: "floci", Confidence: 99.9 },
+    { BlockType: "LINE", Text: "Certificado Aprobado", Confidence: 98.5 }
+  ]
+})
 
 //Definir la respuesta personalizada
 //cuando el cliente detecte evento devolvera... 
@@ -42,9 +57,33 @@ const rekognitionClient = new RekognitionClient({
   }
 })
 
-//Configuracion multer (upload archvios imagen)
+const textractClient = new TextractClient({
+      region: process.env.AWS_REGION || 'us-east-1',
+      endpoint: 'http://localhost:4566',
+      credentials: {
+        accessKeyId: process.env.AWS_ACCESS_KEY_ID || 'test',
+        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || 'test'
+      }
+    })
+
+//Configuracion multer para imagenes
 const upload = multer({
   storage: multer.memoryStorage()
+})
+
+//Configuracion multer para PDFs (maximo 5MB)
+const uploadPdf = multer({
+  storage: multer.memoryStorage(),
+  limits: {
+    fileSize: 5 * 1024 * 1024 // 5 Megabytes
+  },
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype === "application/pdf") {
+      cb(null, true)
+    } else {
+      cb(new Error("Solo se permite archvios de formato pdf"))
+    }
+  }
 })
 
 //servicios archivos .html
@@ -88,6 +127,43 @@ app.post('/api/analizar', upload.single('imagen'), async(req, res) => {
       code: error.name
     })
   }
+})
+
+app.post('/api/analizar-documento', uploadPdf.single('documento'), async (req, res) => {
+  try {
+    if(!req.file) {
+      return res.status(400).json({
+        error: 'No adjunto un archivo pdf valido'
+      })
+    }
+
+    //buffer del pdf subido
+    const pdfBuffer = req.file.buffer
+
+    //configurar el comando detectdocumenttext
+    const params = {
+      Document: {
+        Bytes: pdfBuffer
+      }
+    }
+
+    //Enviar al cliente mock
+    const command = new DetectDocumentTextCommand(params)
+    const response = await textractClient.send(command)
+
+    //enviar respuesta
+    res.json({
+      success: true,
+      blocks: response.Blocks
+    })
+
+  } catch (error) {
+      console.error(`Error en el servidor AWS Textract:`, error);
+      res.status(500).json({
+        error: 'No se completo el analisis en AWS Textract',
+        details: error.message
+      })
+    }
 })
 
 //Iniciamos el servidor web
