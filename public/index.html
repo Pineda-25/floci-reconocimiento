@@ -4,37 +4,61 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Analizando archivos con AWS</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@1.0.2/css/bulma.min.css">
+  <link rel="stylesheet" href="./styles.css">
 </head>
-<body>
-  <h1>Analizando archivos con AWS</h1>
-  <h2>1. AWS Rekognition (Imágenes)</h2>
-  <form id="uploadForm">
-    <div>
-      <label for="imagen">Seleccionar imagen</label>
-      <input type="file" name="imagen" accept="image/*" required>
+<body class="p-5">
+
+  <div class="container" style="max-width: 960px;">
+    <div class="has-text-centered mb-5">
+      <h1 class="title main-title is-2 mb-2">Analizando archivos con AWS</h1>
+      <p class="subtitle is-5">Reconocimiento visual (Rekognition) y extracción de documentos (Textract)</p>
     </div>
-    <button type="submit">Enviar</button>
-  </form>
 
-  <div>
-    <h3>Resultados de analisis</h3>
-    <ul id="listaEtiquetas"></ul>
-  </div>
+    <div class="columns">
+      <div class="column is-6">
+        <div class="box card-rekognition">
+          <div class="is-flex is-justify-content-space-between is-align-items-center mb-3">
+            <h2 class="title is-5 mb-0">1. AWS Rekognition</h2>
+            <span class="tag tag-verde">Imágenes</span>
+          </div>
 
-  <hr>
+          <form id="uploadForm">
+            <div class="field">
+              <label class="label">Seleccionar imagen:</label>
+              <div class="control">
+                <input class="input" type="file" name="imagen" accept="image/*" required>
+              </div>
+            </div>
+            <button class="button btn-verde is-fullwidth mt-4" type="submit">Analizar Imagen</button>
+          </form>
 
-  <h2>2. AWS Textract (Documento PDF < 5MB)</h2>
-  <form id="formTextract">
-    <div>
-      <label for="documento">Seleccionar PDF</label>
-      <input type="file" id="pdfInput" name="documento" accept="application/pdf" required>
+          <h3 class="title is-6 mt-5 mb-3">Resultados del análisis:</h3>
+          <div id="listaEtiquetas"></div>
+        </div>
+      </div>
+      <div class="column is-6">
+        <div class="box card-textract">
+          <div class="is-flex is-justify-content-space-between is-align-items-center mb-3">
+            <h2 class="title is-5 mb-0">2. AWS Textract</h2>
+            <span class="tag tag-celeste">PDF &lt; 5MB</span>
+          </div>
+
+          <form id="formTextract">
+            <div class="field">
+              <label class="label">Seleccionar PDF:</label>
+              <div class="control">
+                <input class="input" type="file" id="pdfInput" name="documento" accept="application/pdf" required>
+              </div>
+            </div>
+            <button class="button btn-celeste is-fullwidth mt-4" type="submit">Analizar Documento</button>
+          </form>
+
+          <h3 class="title is-6 mt-5 mb-3">Resultados del análisis:</h3>
+          <div id="listaTexto"></div>
+        </div>
+      </div>
     </div>
-    <button type="submit">Enviar</button>
-  </form>
-
-  <div>
-    <h3>Resultados de analisis</h3>
-    <ul id="listaTexto"></ul>
   </div>
 
   <script>
@@ -44,8 +68,8 @@
     form.addEventListener("submit", async(e) => {
       e.preventDefault()
       const formData = new FormData(form)
-      listaEtiquetas.innerHTML = `<li>Analizando imagen con AWS...</li>`
-      
+      listaEtiquetas.innerHTML = `<div class="notification is-light py-2"><strong>Analizando imagen con AWS...</strong></div>`
+
       try {
         const response = await fetch('/api/analizar', {
           method: 'POST',
@@ -56,15 +80,19 @@
         if(data.success){
           listaEtiquetas.innerHTML = ``
           data.labels.forEach(label => {
-            const li = document.createElement("li")
-            li.innerHTML = `Imagen: ${label.Name} - confianza: ${label.Confidence}`
-            listaEtiquetas.appendChild(li)
+            const div = document.createElement("div")
+            div.className = "resultado-box verde"
+            div.innerHTML = `
+              <span class="resultado-texto">${label.Name}</span>
+              <span class="badge-verde">${label.Confidence}%</span>
+            `
+            listaEtiquetas.appendChild(div)
           })
         } else {
-          listaEtiquetas.innerHTML = `<li>${data.error}</li>`
+          listaEtiquetas.innerHTML = `<div class="notification is-danger is-light py-2">${data.error}</div>`
         }
       } catch(error) {
-        listaEtiquetas.innerHTML = `<li>Error de conexion</li>`
+        listaEtiquetas.innerHTML = `<div class="notification is-danger is-light py-2">Error de conexión</div>`
       }
     })
 
@@ -83,7 +111,7 @@
       }
 
       const formData = new FormData(formTextract)
-      listaTexto.innerHTML = `<li>Analizando documento con AWS...</li>`
+      listaTexto.innerHTML = `<div class="notification is-light py-2"><strong>Analizando documento con AWS...</strong></div>`
 
       try {
         const response = await fetch('/api/analizar-documento', {
@@ -95,15 +123,19 @@
         if(data.success){
           listaTexto.innerHTML = ``
           data.blocks.forEach(block => {
-            const li = document.createElement("li")
-            li.innerHTML = `Documento: ${block.Text} - confianza: ${block.Confidence}%`
-            listaTexto.appendChild(li)
+            const div = document.createElement("div")
+            div.className = "resultado-box"
+            div.innerHTML = `
+              <span class="resultado-texto">${block.Text}</span>
+              <span class="badge-verde">${block.Confidence}%</span>
+            `
+            listaTexto.appendChild(div)
           })
         } else {
-          listaTexto.innerHTML = `<li>${data.error}</li>`
+          listaTexto.innerHTML = `<div class="notification is-danger is-light py-2">${data.error}</div>`
         }
       } catch(error) {
-        listaTexto.innerHTML = `<li>Error de conexion</li>`
+        listaTexto.innerHTML = `<div class="notification is-danger is-light py-2">Error de conexión</div>`
       }
     })
   </script>
