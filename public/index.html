@@ -100,13 +100,30 @@
     const listaTexto = document.getElementById("listaTexto")
     const pdfInput = document.getElementById("pdfInput")
 
+    // Reiniciar inmediatamente si selecciona un archivo mayor a 5MB
+    pdfInput.addEventListener("change", () => {
+      const archivo = pdfInput.files[0]
+      if (archivo && archivo.size > 5 * 1024 * 1024) {
+        alert("El archivo debe ser menor a 5MB")
+        pdfInput.value = "" // Vacia el campo inmediatamente
+        listaTexto.innerHTML = "" // Limpia cualquier mensaje anterior
+      }
+    })
+
     formTextract.addEventListener("submit", async(e) => {
       e.preventDefault()
 
       // Validacion de 5MB
       const archivo = pdfInput.files[0]
-      if (archivo && archivo.size > 5 * 1024 * 1024) {
+      if (!archivo) {
+        alert("Por favor seleccione un archivo PDF válido")
+        return
+      }
+
+      if (archivo.size > 5 * 1024 * 1024) {
         alert("El archivo debe ser menor a 5MB")
+        pdfInput.value = "" // Reinicia el archivo
+        listaTexto.innerHTML = ""
         return
       }
 

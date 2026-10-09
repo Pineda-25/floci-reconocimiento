@@ -19,17 +19,14 @@ const {
 //Configuracion del mockp (dato de prueba personalizado)
 const {mockClient} = require("aws-sdk-client-mock");
 const rekognitionMock = mockClient(RekognitionClient)
-//configuracion del mock de textract
-const textractMock = mockClient(TextractClient)
-
-
-//DEFINIR LAS RESPUESTA PERSONALIZADA
-textractMock.on(DetectDocumentTextCommand).resolves({
-  Blocks: [
-    { BlockType: "LINE", Text: "floci", Confidence: 99.9 },
-    { BlockType: "LINE", Text: "Certificado Aprobado", Confidence: 98.5 }
-  ]
-})
+// Mock de textract desactivado (llamada normal al servicio)
+// const textractMock = mockClient(TextractClient)
+// textractMock.on(DetectDocumentTextCommand).resolves({
+//   Blocks: [
+//     { BlockType: "LINE", Text: "floci", Confidence: 99.9 },
+//     { BlockType: "LINE", Text: "Certificado Aprobado", Confidence: 98.5 }
+//   ]
+// })
 
 //Definir la respuesta personalizada
 //cuando el cliente detecte evento devolvera... 
